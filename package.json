@@ -1,0 +1,21 @@
+{
+  "name": "scorecard-azure-pipelines-task",
+  "version": "0.0.0-dev",
+  "description": "Azure Pipelines task for OpenSSF scorecard",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=20.1.0"
+  },
+  "dependencies": {
+    "tar": "7.4.3"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.3",
+    "@tsconfig/node20": "20.1.4",
+    "@types/node": "20.16.11",
+    "esbuild": "0.24.0",
+    "tfx-cli": "0.17.0",
+    "typescript": "5.6.3"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Microsoft/azure-pipelines-task-lib/master/tasks.schema.json",
+  "id": "7a7db6e1-31b9-4f97-b18b-203a6dc69e9a",
+  "name": "Scorecard",
+  "friendlyName": "OSSF Scorecard",
+  "description": "Run OpenSSF Scorecard in Azure Pipelines",
+  "helpMarkDown": "[Learn more about OSSF Scorecard](https://scorecard.dev/)",
+  "category": "Azure Pipelines",
+  "author": "OSSF",
+  "version": {
+    "Major": 0,
+    "Minor": 0,
+    "Patch": 1
+  },
+  "instanceNameFormat": "Run OSSF Scorecard",
+  "inputs": [
+    {
+      "name": "results_file",
+      "label": "Results File",
+      "type": "filePath",
+      "required": true,
+      "helpMarkDown": "OUTPUT: Path to file where the results will be saved."
+    },
+    {
+      "name": "results_format",
+      "label": "Results Format",
+      "type": "pickList",
+      "defaultValue": "sarif",
+      "options": {
+        "sarif": "SARIF",
+        "json": "JSON"
+      }
+    }
+  ],
+  "execution": {
+    "Node20_1": {
+      "target": "dist/index.js",
+    }
+  },
+  "minimumAgentVersion": "2.173.0"
+}
