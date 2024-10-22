@@ -10,19 +10,19 @@
   "version": {
     "Major": 0,
     "Minor": 0,
-    "Patch": 1
+    "Patch": 2
   },
   "instanceNameFormat": "Run OSSF Scorecard",
   "inputs": [
     {
-      "name": "results_file",
+      "name": "resultsFile",
       "label": "Results File",
       "type": "filePath",
       "required": true,
       "helpMarkDown": "OUTPUT: Path to file where the results will be saved."
     },
     {
-      "name": "results_format",
+      "name": "resultsFormat",
       "label": "Results Format",
       "type": "pickList",
       "defaultValue": "sarif",
@@ -34,8 +34,8 @@
   ],
   "execution": {
     "Node20_1": {
-      "target": "dist/index.js",
+      "target": "index.mjs"
     }
   },
-  "minimumAgentVersion": "2.173.0"
+  "minimumAgentVersion": "3.230.2"
 }

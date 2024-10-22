@@ -3,9 +3,9 @@
   "manifestVersion": 1,
   "id": "scorecard",
   "name": "OSSF Scorecard",
-  "version": "0.0.1",
-  "public": true,
-  "publisher": "OSSF",
+  "version": "0.0.10",
+  "public": false,
+  "publisher": "JamieMagee",
   "targets": [
     {
       "id": "Microsoft.VisualStudio.Services"
@@ -28,7 +28,7 @@
   "tags": ["scorecard", "security", "ossf"],
   "links": {
     "home": {
-      "uri": "https://jetbrains.com/qodana"
+      "uri": "https://scorecard.dev/"
     }
   },
   "repository": {
@@ -47,7 +47,7 @@
       "type": "ms.vss-distributed-task.task",
       "targets": ["ms.vss-distributed-task.tasks"],
       "properties": {
-        "name": "Scorecard"
+        "name": "dist"
       }
     }
   ]

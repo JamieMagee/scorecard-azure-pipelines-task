@@ -1,9 +1,19 @@
-import * as esbuild from "esbuild";
+import { build } from 'esbuild';
+import { copy } from 'esbuild-plugin-copy';
 
-await esbuild.build({
-  entryPoints: ["src/index.ts"],
+await build({
+  entryPoints: ['src/index.ts'],
   bundle: true,
-  platform: "node",
-  format: "esm",
-  outfile: "dist/index.js",
+  platform: 'node',
+  format: 'esm',
+  outfile: 'dist/index.mjs',
+  minify: true,
+  plugins: [
+    copy({
+      assets: {
+        from: 'src/task.json',
+        to: '.',
+      },
+    }),
+  ],
 });

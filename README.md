@@ -1,0 +1,1 @@
+# Scorecard Azure Pipelines Task
