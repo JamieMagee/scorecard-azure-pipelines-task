@@ -3,7 +3,7 @@
   "manifestVersion": 1,
   "id": "scorecard",
   "name": "OSSF Scorecard",
-  "version": "0.0.10",
+  "version": "0.0.13",
   "public": false,
   "publisher": "JamieMagee",
   "targets": [
@@ -26,6 +26,9 @@
     }
   },
   "tags": ["scorecard", "security", "ossf"],
+  "icons": {
+    "default": "assets/icon.png"
+  },
   "links": {
     "home": {
       "uri": "https://scorecard.dev/"

@@ -6,7 +6,8 @@
   "private": true,
   "scripts": {
     "build": "node esbuild.mjs",
-    "lint": "biome lint",
+    "lint": "biome check --write ./src",
+    "format": "biome format --write ./src",
     "package": "tfx extension create --rev-version",
     "publish": "tfx extension publish"
   },
@@ -19,6 +20,7 @@
   "devDependencies": {
     "@biomejs/biome": "1.9.3",
     "@tsconfig/node20": "20.1.4",
+    "@tsconfig/strictest": "2.0.5",
     "@types/node": "20.16.11",
     "esbuild": "0.24.0",
     "esbuild-plugin-copy": "^2.1.1",

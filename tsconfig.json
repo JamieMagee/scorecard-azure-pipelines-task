@@ -1,4 +1,11 @@
 {
-  "extends": "@tsconfig/node20/tsconfig.json",
-  "compilerOptions": {}
+  "extends": [
+    "@tsconfig/strictest/tsconfig.json",
+    "@tsconfig/node20/tsconfig.json"
+  ],
+  "compilerOptions": {
+    "module": "Preserve",
+    "moduleResolution": "Bundler",
+    "noEmit": true
+  }
 }
