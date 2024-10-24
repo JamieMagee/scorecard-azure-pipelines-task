@@ -42,7 +42,7 @@ jobs:
           set -euo pipefail
 
           current_version=$(\
-            npm exec tfx extension show --publisher JamieMagee --extension-id scorecard --trace-level none | \
+            npm exec tfx extension show --publisher JamieMagee --extension-id scorecard --trace-level none --token ${{ secrets.AZURE_MARKETPLACE_TOKEN }} | \
             jq -r '.versions[0].version' \
           )
           version_parts=(${current_version//./ })
@@ -64,6 +64,9 @@ jobs:
 
       - run: npm run package
 
+      - run: echo "filename=JamieMagee.scorecard-$new_version.vsix" >> $GITHUB_OUTPUT
+        id: set_filename
+
       # - uses: actions/attest-build-provenance@1c608d11d69870c2092266b3f9a6f3abbf17002c # v1.4.3
       #   with:
       #     subject-path: '*.vsix'
@@ -71,16 +74,20 @@ jobs:
       - uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         with:
           name: scorecard
-          path: '*.vsix'
+          path: ${{ steps.set_filename.outputs.filename }}
 
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@c062e08bd532815e2082a85e87e3ef29c3e6d191 # v2.0.8
         with:
           tag_name: v${{ steps.bump_version.outputs.new_version }}
-          files: '*.vsix'
+          files: ${{ steps.set_filename.outputs.filename }}
           generate_release_notes: true
           draft: false
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Publish to Azure Marketplace
+        run: |
+          npm exec tfx extension publish --token ${{ secrets.AZURE_MARKETPLACE_TOKEN }} --vsix ${{ steps.set_filename.outputs.filename }}

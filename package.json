@@ -6,10 +6,9 @@
   "private": true,
   "scripts": {
     "build": "node esbuild.mjs",
-    "lint": "biome check --write ./src",
+    "lint": "biome check ./src",
     "format": "biome format --write ./src",
-    "package": "tfx extension create",
-    "publish": "tfx extension publish"
+    "package": "tfx extension create"
   },
   "engines": {
     "node": ">=20.1.0"
