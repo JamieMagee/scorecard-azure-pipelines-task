@@ -59,6 +59,8 @@ jobs:
           esac
 
           jq --arg new_version "$new_version" '.version = $new_version' vss-extension.json > tmp.json && mv tmp.json vss-extension.json
+          jq --arg new_version "$new_version" '.version.Major = ($new_version | split(".") | .[0] | tonumber) | .version.Minor = ($new_version | split(".") | .[1] | tonumber) | .version.Patch = ($new_version | split(".") | .[2] | tonumber)' dist/task.json > tmp.json && mv tmp.json dist/task.json
+          
           echo "new_version=$new_version" >> $GITHUB_OUTPUT
         id: bump_version
 
