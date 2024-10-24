@@ -38,10 +38,26 @@ jobs:
       - run: npm run build
 
       - run: | 
-          # Read the current version from vss-extension.json and bump it
+          #!/usr/bin/env bash
+          set -euo pipefail
+
           current_version=$(jq -r '.version' vss-extension.json)
-          new_version=$(npm version ${{ github.event.inputs.bump }} --no-git-tag-version)
+          version_parts=(${current_version//./ })
+          case "${{ github.event.inputs.bump }}" in
+            major)
+              new_version="${version_parts[0]}.$((version_parts[1]))$((version_parts[2] + 1))"
+              ;;
+            minor)
+              new_version="${version_parts[0]}.$((version_parts[1] + 1)).0"
+              ;;
+            patch)
+              new_version="${version_parts[0]}.$((version_parts[1])).$((version_parts[2] + 1))"
+              ;;
+          esac
+
           jq --arg new_version "$new_version" '.version = $new_version' vss-extension.json > tmp.json && mv tmp.json vss-extension.json
+          echo "new_version=$new_version" >> $GITHUB_OUTPUT
+        id: bump_version
 
       - run: npm run package
 
@@ -58,8 +74,9 @@ jobs:
         id: create_release
         uses: softprops/action-gh-release@c062e08bd532815e2082a85e87e3ef29c3e6d191 # v2.0.8
         with:
-          tag_name: v${{ github.event.inputs.bump }}
+          tag_name: v${{ steps.bump_version.outputs.new_version }}
           files: '*.vsix'
+          generate_release_notes: true
           draft: false
           prerelease: false
         env:
