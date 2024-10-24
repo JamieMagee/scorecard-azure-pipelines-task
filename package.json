@@ -1,6 +1,6 @@
 {
   "name": "scorecard-azure-pipelines-task",
-  "version": "0.0.0-dev",
+  "version": "0.0.0",
   "description": "Azure Pipelines task for OpenSSF scorecard",
   "type": "module",
   "private": true,
