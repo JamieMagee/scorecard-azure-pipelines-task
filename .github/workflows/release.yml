@@ -45,15 +45,14 @@ jobs:
 
       - run: npm run package
 
-      - uses: actions/attest-build-provenance@1c608d11d69870c2092266b3f9a6f3abbf17002c # v1.4.3
-        with:
-          subject-path: '*.vsix'
+      # - uses: actions/attest-build-provenance@1c608d11d69870c2092266b3f9a6f3abbf17002c # v1.4.3
+      #   with:
+      #     subject-path: '*.vsix'
 
       - uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         with:
           name: scorecard
           path: '*.vsix'
-
 
       - name: Create Release
         id: create_release
