@@ -1,6 +1,6 @@
+import { spawn } from "node:child_process";
 import console from "node:console";
 import crypto from "node:crypto";
-import { spawn } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -22,7 +22,7 @@ async function getLatestVersion(): Promise<string> {
   if (!response.ok) {
     throw new Error(`Error fetching latest version: ${response.statusText}`);
   }
-  const data = await response.json() as { tag_name: string };
+  const data = (await response.json()) as { tag_name: string };
   return data.tag_name;
 }
 
