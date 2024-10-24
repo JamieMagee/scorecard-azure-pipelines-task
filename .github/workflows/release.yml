@@ -42,8 +42,8 @@ jobs:
           set -euo pipefail
 
           current_version=$(\
-            npm exec tfx extension show --publisher JamieMagee --extension-id scorecard --trace-level none --token ${{ secrets.AZURE_MARKETPLACE_TOKEN }} | \
-            jq -r '.versions[0].version' \
+            npm exec tfx extension show -- --publisher JamieMagee --extension-id scorecard --trace-level none --token ${{ secrets.AZURE_MARKETPLACE_TOKEN }} | \
+            jq -r '.versions[0].version'
           )
           version_parts=(${current_version//./ })
           case "${{ github.event.inputs.bump }}" in
@@ -64,7 +64,7 @@ jobs:
 
       - run: npm run package
 
-      - run: echo "filename=JamieMagee.scorecard-$new_version.vsix" >> $GITHUB_OUTPUT
+      - run: echo "filename=JamieMagee.scorecard-${{ steps.bump_version.outputs.new_version }}.vsix" >> $GITHUB_OUTPUT
         id: set_filename
 
       # - uses: actions/attest-build-provenance@1c608d11d69870c2092266b3f9a6f3abbf17002c # v1.4.3
@@ -90,4 +90,4 @@ jobs:
       
       - name: Publish to Azure Marketplace
         run: |
-          npm exec tfx extension publish --token ${{ secrets.AZURE_MARKETPLACE_TOKEN }} --vsix ${{ steps.set_filename.outputs.filename }}
+          npm exec tfx extension publish -- --token ${{ secrets.AZURE_MARKETPLACE_TOKEN }} --vsix ${{ steps.set_filename.outputs.filename }}
