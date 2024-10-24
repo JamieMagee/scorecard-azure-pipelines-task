@@ -3,7 +3,7 @@
   "manifestVersion": 1,
   "id": "scorecard",
   "name": "OSSF Scorecard",
-  "version": "0.0.13",
+  "version": "0.0.0",
   "public": false,
   "publisher": "JamieMagee",
   "targets": [

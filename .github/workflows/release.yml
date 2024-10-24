@@ -41,7 +41,10 @@ jobs:
           #!/usr/bin/env bash
           set -euo pipefail
 
-          current_version=$(jq -r '.version' vss-extension.json)
+          current_version=$(\
+            npm exec tfx extension show --publisher JamieMagee --extension-id scorecard --trace-level none | \
+            jq -r '.versions[0].version' \
+          )
           version_parts=(${current_version//./ })
           case "${{ github.event.inputs.bump }}" in
             major)
