@@ -8,7 +8,6 @@ await build({
   format: 'esm',
   outfile: 'dist/index.mjs',
   minify: true,
-  sourcemap: true,
   plugins: [
     copy({
       assets: {
