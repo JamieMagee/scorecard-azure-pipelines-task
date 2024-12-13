@@ -4,7 +4,7 @@
   "id": "scorecard",
   "name": "OSSF Scorecard",
   "version": "0.0.0",
-  "public": false,
+  "public": true,
   "publisher": "JamieMagee",
   "targets": [
     {
