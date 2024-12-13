@@ -3,9 +3,10 @@
     "@tsconfig/strictest/tsconfig.json",
     "@tsconfig/node20/tsconfig.json"
   ],
+  "include": ["src"],
   "compilerOptions": {
-    "module": "Preserve",
-    "moduleResolution": "Bundler",
+    "module": "preserve",
+    "moduleResolution": "bundler",
     "noEmit": true
   }
 }
