@@ -1,8 +1,14 @@
 name: Scorecards analysis
-on:
-  workflow_dispatch:
 
-permissions: read-all
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 8 * * 4'
+
+permissions: {}
 
 jobs:
   analysis:
