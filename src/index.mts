@@ -7,7 +7,7 @@ import path from "node:path";
 import process from "node:process";
 import { Readable } from "node:stream";
 import { finished } from "node:stream/promises";
-import * as tar from "tar";
+import { extract } from "tar/extract";
 
 /**
  * Get the latest version of Scorecard from GitHub.
@@ -130,7 +130,7 @@ async function verifyChecksum(downloadUrl: string): Promise<void> {
 async function extractTarGz(filePath: string): Promise<string> {
   const dest = path.join(os.tmpdir(), "scorecard");
   fs.mkdirSync(dest, { recursive: true });
-  await tar.x({
+  await extract({
     file: filePath,
     cwd: dest,
     gzip: true,
