@@ -27,22 +27,24 @@ jobs:
         with:
           persist-credentials: false
 
+      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # v4.0.0
+
       - uses: actions/setup-node@0a44ba7841725637a19e28fa30b79a866c81b0a6 # v4.0.4
         with:
           node-version: '20'
 
-      - run: npm ci
+      - run: pnpm install --frozen-lockfile
 
-      - run: npm run lint
+      - run: pnpm run lint
 
-      - run: npm run build
+      - run: pnpm run build
 
       - run: | 
           #!/usr/bin/env bash
           set -euo pipefail
 
           current_version=$(\
-            npm exec tfx extension show -- --publisher JamieMagee --extension-id scorecard --trace-level none --token ${{ secrets.AZURE_MARKETPLACE_TOKEN }} | \
+            pnpm exec tfx extension show -- --publisher JamieMagee --extension-id scorecard --trace-level none --token ${{ secrets.AZURE_MARKETPLACE_TOKEN }} | \
             jq -r '.versions[0].version'
           )
           version_parts=(${current_version//./ })
@@ -64,7 +66,7 @@ jobs:
           echo "new_version=$new_version" >> $GITHUB_OUTPUT
         id: bump_version
 
-      - run: npm run package
+      - run: pnpm run package
 
       - run: echo "filename=JamieMagee.scorecard-${{ steps.bump_version.outputs.new_version }}.vsix" >> $GITHUB_OUTPUT
         id: set_filename
@@ -92,4 +94,4 @@ jobs:
       
       - name: Publish to Azure Marketplace
         run: |
-          npm exec tfx extension publish -- --token ${{ secrets.AZURE_MARKETPLACE_TOKEN }} --vsix ${{ steps.set_filename.outputs.filename }}
+          pnpm exec tfx extension publish -- --token ${{ secrets.AZURE_MARKETPLACE_TOKEN }} --vsix ${{ steps.set_filename.outputs.filename }}
