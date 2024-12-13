@@ -175,7 +175,7 @@ function getArguments(): string[] {
  * @returns {Promise<void>} A promise that resolves when the command is executed.
  */
 async function runScorecard(binary: string): Promise<void> {
-  // const child = spawn(binary, getArguments(), {
+  // spawn(binary, getArguments(), {
   //   env: {
   //     AZURE_DEVOPS_AUTH_TOKEN:
   //       process.env["INPUT_REPOTOKEN"] ??
@@ -184,17 +184,26 @@ async function runScorecard(binary: string): Promise<void> {
   //   },
   // });
 
-  const child = spawn(binary, ["--repo", "github.com/ossf/scorecard"], {
-    env: {
-      GITHUB_AUTH_TOKEN: process.env["INPUT_REPOTOKEN"],
-      SCORECARD_EXPERIMENTAL: "true",
-    },
-  });
-  child.stdout.on("data", (data) => {
-    console.log(data.toString());
-  });
-  child.stderr.on("data", (data) => {
-    console.error(data.toString());
+  return new Promise((resolve, reject) => {
+    const child = spawn(binary, ["--repo", "github.com/ossf/scorecard"], {
+      env: {
+        GITHUB_AUTH_TOKEN: process.env["INPUT_REPOTOKEN"],
+        SCORECARD_EXPERIMENTAL: "true",
+      },
+      stdio: "inherit",
+    });
+
+    child.on("close", (code) => {
+      if (code !== 0) {
+        reject(new Error(`Scorecard process exited with code ${code}`));
+      } else {
+        resolve();
+      }
+    });
+
+    child.on("error", (err) => {
+      reject(err);
+    });
   });
 }
 
@@ -214,5 +223,5 @@ async function run(): Promise<void> {
 // Run the main function
 run().catch((error) => {
   console.error(error);
-  process.exit();
+  process.exit(1);
 });
