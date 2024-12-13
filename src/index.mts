@@ -144,14 +144,51 @@ async function extractTarGz(filePath: string): Promise<string> {
 }
 
 /**
+ * Get the arguments to pass to the Scorecard binary.
+ * @returns {string[]} The arguments to pass to the Scorecard binary.
+ */
+function getArguments(): string[] {
+  const args: string[] = [];
+
+  const repository = process.env["BUILD_REPOSITORY_URI"];
+  if (repository) {
+    args.push("--repo", repository);
+  }
+
+  const resultsFile = process.env["INPUT_RESULTSFILE"];
+  if (resultsFile) {
+    args.push("--output", resultsFile);
+  }
+
+  const resultsFormat = process.env["INPUT_RESULTSFORMAT"];
+  if (resultsFormat) {
+    args.push("--format", resultsFormat);
+  }
+
+  return args;
+}
+
+/**
  * Run the Scorecard binary.
  * @async
  * @param binary The path to the Scorecard binary.
  * @returns {Promise<void>} A promise that resolves when the command is executed.
  */
 async function runScorecard(binary: string): Promise<void> {
-  const child = spawn(binary, ["--repo", "https://github.com/ossf/scorecard"], {
-    env: { SCORECARD_EXPERIMENTAL: "true" },
+  // const child = spawn(binary, getArguments(), {
+  //   env: {
+  //     AZURE_DEVOPS_AUTH_TOKEN:
+  //       process.env["INPUT_REPOTOKEN"] ??
+  //       process.env["AZURE_DEVOPS_AUTH_TOKEN"],
+  //     SCORECARD_EXPERIMENTAL: "true",
+  //   },
+  // });
+
+  const child = spawn(binary, ["--repo", "github.com/ossf/scorecard"], {
+    env: {
+      GITHUB_AUTH_TOKEN: process.env["INPUT_REPOTOKEN"],
+      SCORECARD_EXPERIMENTAL: "true",
+    },
   });
   child.stdout.on("data", (data) => {
     console.log(data.toString());
