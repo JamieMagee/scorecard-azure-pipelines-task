@@ -69,7 +69,9 @@ async function getDownloadUrl(): Promise<string> {
   const version = await getLatestVersion();
   const os = getOs();
   const arch = getArch();
-  return `https://github.com/ossf/scorecard/releases/download/${version}/scorecard_${version.substring(1)}_${os}_${arch}.tar.gz`;
+  return `https://github.com/ossf/scorecard/releases/download/${version}/scorecard_${version.substring(
+    1,
+  )}_${os}_${arch}.tar.gz`;
 }
 
 /**
@@ -137,10 +139,7 @@ async function extractTarGz(filePath: string): Promise<string> {
     filter: (file) => file.startsWith("scorecard"),
   });
   const suffix = getOs() === "windows" ? ".exe" : "";
-  const oldName = path.join(dest, `scorecard-${getOs()}-${getArch()}`, suffix);
-  const newName = path.join(dest, "scorecard", suffix);
-  fs.renameSync(oldName, newName);
-  return newName;
+  return path.join(dest, "scorecard", suffix);
 }
 
 /**
@@ -175,19 +174,10 @@ function getArguments(): string[] {
  * @returns {Promise<void>} A promise that resolves when the command is executed.
  */
 async function runScorecard(binary: string): Promise<void> {
-  // spawn(binary, getArguments(), {
-  //   env: {
-  //     AZURE_DEVOPS_AUTH_TOKEN:
-  //       process.env["INPUT_REPOTOKEN"] ??
-  //       process.env["AZURE_DEVOPS_AUTH_TOKEN"],
-  //     SCORECARD_EXPERIMENTAL: "true",
-  //   },
-  // });
-
   return new Promise((resolve, reject) => {
-    const child = spawn(binary, ["--repo", "github.com/ossf/scorecard"], {
+    const child = spawn(binary, getArguments(), {
       env: {
-        GITHUB_AUTH_TOKEN: process.env["INPUT_REPOTOKEN"],
+        AZURE_DEVOPS_AUTH_TOKEN: process.env["INPUT_REPOTOKEN"],
         SCORECARD_EXPERIMENTAL: "true",
       },
       stdio: "inherit",

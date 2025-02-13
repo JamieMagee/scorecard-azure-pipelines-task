@@ -35,8 +35,9 @@
       "name": "repoToken",
       "label": "Azure DevOps PAT",
       "type": "string",
-      "required": false,
-      "helpMarkDown": "INPUT: Azure DevOps PAT with read access to the repository."
+      "required": true,
+      "helpMarkDown": "INPUT: Azure DevOps PAT with read access to the repository.",
+      "defaultValue": "$(System.AccessToken)"
     }
   ],
   "execution": {
