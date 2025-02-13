@@ -154,14 +154,21 @@ function getArguments(): string[] {
     args.push("--repo", repository);
   }
 
-  const resultsFile = process.env["INPUT_RESULTSFILE"];
-  if (resultsFile) {
-    args.push("--output", resultsFile);
-  }
-
   const resultsFormat = process.env["INPUT_RESULTSFORMAT"];
   if (resultsFormat) {
     args.push("--format", resultsFormat);
+  }
+
+  const resultsFile = process.env["INPUT_RESULTSFILE"];
+  if (resultsFile) {
+    args.push("--output", resultsFile);
+  } else {
+    args.push("--output");
+    if (resultsFormat === "sarif") {
+      args.push("results.sarif");
+    } else {
+      args.push("results.json");
+    }
   }
 
   return args;
