@@ -179,6 +179,7 @@ async function runScorecard(binary: string): Promise<void> {
       env: {
         AZURE_DEVOPS_AUTH_TOKEN: process.env["INPUT_REPOTOKEN"],
         SCORECARD_EXPERIMENTAL: "true",
+        ENABLE_SARIF: "true",
       },
       stdio: "inherit",
     });
