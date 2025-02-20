@@ -143,6 +143,24 @@ async function extractTarGz(filePath: string): Promise<string> {
 }
 
 /**
+ * Get the path to the results file.
+ * Uses the `INPUT_RESULTSFILE` environment variable.
+ * If not set, defaults to `results.sarif` or `results.json` based on the `INPUT_RESULTSFORMAT` environment variable.
+ * @returns {string} The path to the results file.
+ */
+function getResultsFileName(): string {
+  const resultsFile = process.env["INPUT_RESULTSFILE"];
+  if (resultsFile) {
+    return resultsFile;
+  }
+  const resultsFormat = process.env["INPUT_RESULTSFORMAT"];
+  if (resultsFormat === "sarif") {
+    return "results.sarif";
+  }
+  return "results.json";
+}
+
+/**
  * Get the arguments to pass to the Scorecard binary.
  * @returns {string[]} The arguments to pass to the Scorecard binary.
  */
@@ -159,10 +177,7 @@ function getArguments(): string[] {
     args.push("--format", resultsFormat);
   }
 
-  const resultsFile = process.env["INPUT_RESULTSFILE"];
-  if (resultsFile) {
-    args.push("--output", resultsFile);
-  }
+  args.push("--output", getResultsFileName());
 
   const resultsPolicy = process.env["INPUT_RESULTSPOLICY"];
   if (resultsPolicy) {
@@ -206,6 +221,18 @@ async function runScorecard(binary: string): Promise<void> {
 }
 
 /**
+ * Upload the results to Azure DevOps.
+ * @see https://learn.microsoft.com/azure/devops/pipelines/scripts/logging-commands#upload-upload-an-artifact
+ */
+function uploadResults(): void {
+  const resultsFileName = getResultsFileName();
+  const resultsFile = path.join(process.cwd(), resultsFileName);
+  console.log(
+    `##vso[artifact.upload artifactname=${resultsFileName};]${resultsFile}`,
+  );
+}
+
+/**
  * The main entrypoint of the task.
  * @async
  * @returns {Promise<void>} A promise that resolves when the task is complete.
@@ -216,6 +243,7 @@ async function run(): Promise<void> {
   await verifyChecksum(downloadUrl);
   const binary = await extractTarGz(path.basename(downloadUrl));
   await runScorecard(binary);
+  uploadResults();
 }
 
 // Run the main function
