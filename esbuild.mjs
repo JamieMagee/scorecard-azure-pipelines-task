@@ -16,7 +16,7 @@ await build({
           to: ".",
         },
         {
-          from: "assets/policy.yml",
+          from: "assets/*",
           to: ".",
         },
       ],
