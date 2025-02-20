@@ -164,6 +164,13 @@ function getArguments(): string[] {
     args.push("--output", resultsFile);
   }
 
+  const resultsPolicy = process.env["INPUT_RESULTSPOLICY"];
+  if (resultsPolicy) {
+    args.push("--policy", resultsPolicy);
+  } else {
+    args.push("--policy", path.join(import.meta.dirname, "policy.yml"));
+  }
+
   return args;
 }
 

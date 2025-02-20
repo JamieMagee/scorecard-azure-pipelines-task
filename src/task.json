@@ -32,6 +32,13 @@
       }
     },
     {
+      "name": "resultsPolicy",
+      "label": "Results Policy",
+      "type": "string",
+      "required": false,
+      "helpMarkDown": "INPUT: Path to a JSON file containing the policy to use for the results."
+    },
+    {
       "name": "repoToken",
       "label": "Azure DevOps PAT",
       "type": "string",

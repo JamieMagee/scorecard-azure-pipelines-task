@@ -10,10 +10,16 @@ await build({
   minify: true,
   plugins: [
     copy({
-      assets: {
-        from: "src/task.json",
-        to: ".",
-      },
+      assets: [
+        {
+          from: "src/task.json",
+          to: ".",
+        },
+        {
+          from: "assets/policy.yml",
+          to: ".",
+        },
+      ],
     }),
   ],
 });
