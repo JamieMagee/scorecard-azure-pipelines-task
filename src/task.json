@@ -45,5 +45,5 @@
       "target": "index.mjs"
     }
   },
-  "minimumAgentVersion": "3.230.2"
+  "minimumAgentVersion": "3.224.0"
 }
