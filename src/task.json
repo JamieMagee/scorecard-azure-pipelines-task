@@ -17,7 +17,7 @@
     {
       "name": "resultsFile",
       "label": "Results File",
-      "type": "filePath",
+      "type": "string",
       "required": false,
       "helpMarkDown": "OUTPUT: Path to file where the results will be saved."
     },

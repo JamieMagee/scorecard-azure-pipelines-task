@@ -162,13 +162,6 @@ function getArguments(): string[] {
   const resultsFile = process.env["INPUT_RESULTSFILE"];
   if (resultsFile) {
     args.push("--output", resultsFile);
-  } else {
-    args.push("--output");
-    if (resultsFormat === "sarif") {
-      args.push("results.sarif");
-    } else {
-      args.push("results.json");
-    }
   }
 
   return args;
