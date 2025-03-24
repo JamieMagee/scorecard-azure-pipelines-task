@@ -12,9 +12,9 @@
   },
   "engines": {
     "node": ">=20.1.0",
-    "pnpm": ">=9.0.0"
+    "pnpm": ">=10.0.0"
   },
-  "packageManager": "pnpm@9.15.0",
+  "packageManager": "pnpm@10.6.5",
   "dependencies": {
     "tar": "7.4.3"
   },
