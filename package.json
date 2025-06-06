@@ -22,7 +22,7 @@
     "@biomejs/biome": "1.9.4",
     "@tsconfig/node20": "20.1.5",
     "@tsconfig/strictest": "2.0.5",
-    "@types/node": "20.17.57",
+    "@types/node": "20.19.0",
     "esbuild": "0.25.5",
     "esbuild-plugin-copy": "2.1.1",
     "tfx-cli": "0.21.1",
