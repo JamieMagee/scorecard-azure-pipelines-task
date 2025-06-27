@@ -47,9 +47,6 @@ policies:
   Binary-Artifacts:
       score: 10
       mode: enforced
-  Signed-Releases:
-      score: 10
-      mode: disabled
   Dependency-Update-Tool:
       score: 10
       mode: enforced
