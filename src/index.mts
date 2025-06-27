@@ -5,8 +5,6 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import process from "node:process";
-import { Readable } from "node:stream";
-import { finished } from "node:stream/promises";
 import { extract } from "tar/extract";
 
 /**
@@ -78,27 +76,50 @@ async function getDownloadUrl(): Promise<string> {
  * Download a file from a URL to a destination path.
  * @async
  * @param url The URL to download from.
- * @returns {Promise<void>} A promise that resolves when the download is complete.
+ * @returns {Promise<string>} A promise that resolves with the downloaded filename.
  * @throws {Error} If the fetch fails.
  */
-async function downloadFile(url: string): Promise<void> {
+async function downloadFile(url: string): Promise<string> {
   const filename = path.basename(url);
-  const { body } = await fetch(url);
-  if (!body) {
-    throw new Error(`Failed to fetch ${url}`);
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch ${url}: ${response.statusText}`);
   }
+
+  if (!response.body) {
+    throw new Error(`No response body for ${url}`);
+  }
+
   const fileStream = fs.createWriteStream(filename);
-  await finished(Readable.fromWeb(body).pipe(fileStream));
+  try {
+    const buffer = await response.arrayBuffer();
+    await fs.promises.writeFile(filename, new Uint8Array(buffer));
+    return filename;
+  } catch (error) {
+    try {
+      fs.unlinkSync(filename);
+    } catch {
+      // Ignore cleanup errors
+    }
+    throw error;
+  } finally {
+    fileStream.destroy();
+  }
 }
 
 /**
  * Verify the checksum of the downloaded Scorecard binary.
  * @async
  * @param downloadUrl The URL to the Scorecard download.
+ * @param filename The downloaded filename.
  * @returns {Promise<void>} A promise that resolves when the checksum is verified.
  * @throws {Error} If the checksum verification fails.
  */
-async function verifyChecksum(downloadUrl: string): Promise<void> {
+async function verifyChecksum(
+  downloadUrl: string,
+  filename: string,
+): Promise<void> {
   const checksumUrl = `${path.dirname(downloadUrl)}/scorecard_checksums.txt`;
   const response = await fetch(checksumUrl);
   if (!response.ok) {
@@ -107,19 +128,20 @@ async function verifyChecksum(downloadUrl: string): Promise<void> {
   const checksumData = await response.text();
 
   const checksumLines = checksumData.split("\n");
-  const filename = path.basename(downloadUrl);
   const expectedChecksum = checksumLines
-    .find((line) => line.includes(filename))
+    .find((line) => line.includes(path.basename(filename)))
     ?.split(" ")[0];
 
   if (!expectedChecksum) {
-    throw new Error(`Checksum not found for ${downloadUrl}`);
+    throw new Error(`Checksum not found for ${filename}`);
   }
 
-  const fileBuffer = fs.readFileSync(filename);
+  const fileBuffer = await fs.promises.readFile(filename);
   const hash = crypto.createHash("sha256").update(fileBuffer).digest("hex");
   if (hash !== expectedChecksum) {
-    throw new Error(`Checksum verification failed for ${filename}`);
+    throw new Error(
+      `Checksum verification failed for ${filename}. Expected: ${expectedChecksum}, Got: ${hash}`,
+    );
   }
 }
 
@@ -131,15 +153,25 @@ async function verifyChecksum(downloadUrl: string): Promise<void> {
  */
 async function extractTarGz(filePath: string): Promise<string> {
   const dest = path.join(os.tmpdir(), "scorecard");
-  fs.mkdirSync(dest, { recursive: true });
+  await fs.promises.mkdir(dest, { recursive: true });
+
   await extract({
     file: filePath,
     cwd: dest,
     gzip: true,
     filter: (file) => file.startsWith("scorecard"),
   });
+
   const suffix = getOs() === "windows" ? ".exe" : "";
-  return path.join(dest, "scorecard", suffix);
+  const binaryPath = path.join(dest, `scorecard${suffix}`);
+
+  try {
+    await fs.promises.access(binaryPath);
+  } catch {
+    throw new Error(`Scorecard binary not found at ${binaryPath}`);
+  }
+
+  return binaryPath;
 }
 
 /**
@@ -154,10 +186,10 @@ function getResultsFileName(): string {
     return resultsFile;
   }
   const resultsFormat = process.env["INPUT_RESULTSFORMAT"];
-  if (resultsFormat === "sarif") {
-    return "results.sarif";
+  if (resultsFormat === "json") {
+    return "results.json";
   }
-  return "results.json";
+  return "results.sarif";
 }
 
 /**
@@ -168,14 +200,13 @@ function getArguments(): string[] {
   const args: string[] = [];
 
   const repository = process.env["BUILD_REPOSITORY_URI"];
-  if (repository) {
-    args.push("--repo", repository);
+  if (!repository) {
+    throw new Error("BUILD_REPOSITORY_URI environment variable is required");
   }
+  args.push("--repo", repository);
 
-  const resultsFormat = process.env["INPUT_RESULTSFORMAT"];
-  if (resultsFormat) {
-    args.push("--format", resultsFormat);
-  }
+  const resultsFormat = process.env["INPUT_RESULTSFORMAT"] || "sarif";
+  args.push("--format", resultsFormat);
 
   args.push("--output", getResultsFileName());
 
@@ -183,7 +214,8 @@ function getArguments(): string[] {
   if (resultsPolicy) {
     args.push("--policy", resultsPolicy);
   } else {
-    args.push("--policy", path.join(import.meta.dirname, "policy.yml"));
+    const defaultPolicy = path.join(import.meta.dirname, "policy.yml");
+    args.push("--policy", defaultPolicy);
   }
 
   return args;
@@ -196,13 +228,19 @@ function getArguments(): string[] {
  * @returns {Promise<void>} A promise that resolves when the command is executed.
  */
 async function runScorecard(binary: string): Promise<void> {
+  const args = getArguments();
+  const env = {
+    ...process.env,
+    AZURE_DEVOPS_AUTH_TOKEN: process.env["INPUT_REPOTOKEN"],
+    SCORECARD_EXPERIMENTAL: "true",
+    ENABLE_SARIF: "true",
+  };
+
+  console.log(`Running: ${binary} ${args.join(" ")}`);
+
   return new Promise((resolve, reject) => {
-    const child = spawn(binary, getArguments(), {
-      env: {
-        AZURE_DEVOPS_AUTH_TOKEN: process.env["INPUT_REPOTOKEN"],
-        SCORECARD_EXPERIMENTAL: "true",
-        ENABLE_SARIF: "true",
-      },
+    const child = spawn(binary, args, {
+      env,
       stdio: "inherit",
     });
 
@@ -215,7 +253,7 @@ async function runScorecard(binary: string): Promise<void> {
     });
 
     child.on("error", (err) => {
-      reject(err);
+      reject(new Error(`Failed to start Scorecard process: ${err.message}`));
     });
   });
 }
@@ -224,11 +262,35 @@ async function runScorecard(binary: string): Promise<void> {
  * Upload the results to Azure DevOps.
  * @see https://learn.microsoft.com/azure/devops/pipelines/scripts/logging-commands#upload-upload-an-artifact
  */
-function uploadResults(): void {
+async function uploadResults(): Promise<void> {
   const resultsFileName = getResultsFileName();
   const resultsFile = path.join(process.cwd(), resultsFileName);
-  console.log(
-    `##vso[artifact.upload artifactname=${resultsFileName};]${resultsFile}`,
+
+  // Verify the results file exists before uploading
+  try {
+    await fs.promises.access(resultsFile);
+    console.log(
+      `##vso[artifact.upload artifactname=${resultsFileName};]${resultsFile}`,
+    );
+  } catch {
+    throw new Error(`Results file not found: ${resultsFile}`);
+  }
+}
+
+/**
+ * Clean up temporary files.
+ * @param filePaths The file paths to clean up.
+ */
+async function cleanup(filePaths: string[]): Promise<void> {
+  await Promise.allSettled(
+    filePaths.map(async (filePath) => {
+      try {
+        await fs.promises.unlink(filePath);
+        console.log(`Cleaned up: ${filePath}`);
+      } catch {
+        // Ignore cleanup errors
+      }
+    }),
   );
 }
 
@@ -238,12 +300,38 @@ function uploadResults(): void {
  * @returns {Promise<void>} A promise that resolves when the task is complete.
  */
 async function run(): Promise<void> {
-  const downloadUrl = await getDownloadUrl();
-  await downloadFile(downloadUrl);
-  await verifyChecksum(downloadUrl);
-  const binary = await extractTarGz(path.basename(downloadUrl));
-  await runScorecard(binary);
-  uploadResults();
+  const tempFiles: string[] = [];
+  try {
+    console.log("Starting Scorecard Azure Pipelines task...");
+
+    const downloadUrl = await getDownloadUrl();
+    console.log(`Downloading Scorecard from: ${downloadUrl}`);
+
+    const filename = await downloadFile(downloadUrl);
+    tempFiles.push(filename);
+    console.log(`Downloaded: ${filename}`);
+
+    console.log("Verifying checksum...");
+    await verifyChecksum(downloadUrl, filename);
+
+    console.log("Extracting binary...");
+    const binary = await extractTarGz(filename);
+    tempFiles.push(binary);
+
+    console.log("Running Scorecard...");
+    await runScorecard(binary);
+
+    console.log("Uploading results...");
+    await uploadResults();
+
+    console.log("Scorecard task completed successfully!");
+  } catch (error) {
+    console.error("Scorecard task failed:", error);
+    throw error;
+  } finally {
+    // Clean up temporary files
+    await cleanup(tempFiles);
+  }
 }
 
 // Run the main function
