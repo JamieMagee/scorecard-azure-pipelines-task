@@ -3,3 +3,5 @@ dist/
 package-lock.json
 *.vsix
 *.tar.gz
+scorecard-results.json
+scorecard-results.sarif

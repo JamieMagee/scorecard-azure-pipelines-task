@@ -187,9 +187,9 @@ function getResultsFileName(): string {
   }
   const resultsFormat = process.env["INPUT_RESULTSFORMAT"];
   if (resultsFormat === "json") {
-    return "results.json";
+    return "scorecard-results.json";
   }
-  return "results.sarif";
+  return "scorecard-results.sarif";
 }
 
 /**
