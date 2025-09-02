@@ -25,7 +25,7 @@
     "@types/node": "20.19.11",
     "esbuild": "0.25.9",
     "esbuild-plugin-copy": "2.1.1",
-    "tfx-cli": "0.21.3",
+    "tfx-cli": "0.22.0",
     "typescript": "5.9.2"
   }
 }
