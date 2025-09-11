@@ -31,8 +31,8 @@ importers:
         specifier: 2.1.1
         version: 2.1.1(esbuild@0.25.9)
       tfx-cli:
-        specifier: 0.22.0
-        version: 0.22.0
+        specifier: 0.22.1
+        version: 0.22.1
       typescript:
         specifier: 5.9.2
         version: 5.9.2
@@ -1126,8 +1126,8 @@ packages:
     resolution: {integrity: sha512-5S7Va8hKfV7W5U6g3aYxXmlPoZVAwUMy9AOKyF2fVuZa2UD3qZjg578OrLRt8PcNN1PleVaL/5/yYATNL0ICUw==}
     engines: {node: '>=18'}
 
-  tfx-cli@0.22.0:
-    resolution: {integrity: sha512-DAG4fSWf4rkvCxJyt1Ph/EQbOL9RdBEESvtjz2y1GWhSgBTFSv2ak/N9rfeq7OHOdJWjaL6QleAtpGhu35UJig==}
+  tfx-cli@0.22.1:
+    resolution: {integrity: sha512-LhKzq0HJ7/kznsoCsoX+wqeYzHCfS0RuBMT4g6/pEZ+cPPZZIKC55Nh+0XwjaruVVoMuuK5BrNk2QHS6gDfk5Q==}
     engines: {node: '>=8.0.0'}
     hasBin: true
 
@@ -2434,7 +2434,7 @@ snapshots:
       mkdirp: 3.0.1
       yallist: 5.0.0
 
-  tfx-cli@0.22.0:
+  tfx-cli@0.22.1:
     dependencies:
       app-root-path: 1.0.0
       archiver: 2.0.3
