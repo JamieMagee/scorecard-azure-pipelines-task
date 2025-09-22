@@ -16,7 +16,7 @@
   },
   "packageManager": "pnpm@10.12.4",
   "dependencies": {
-    "tar": "7.4.3"
+    "tar": "7.4.4"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.4",
