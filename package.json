@@ -26,6 +26,6 @@
     "esbuild": "0.25.10",
     "esbuild-plugin-copy": "2.1.1",
     "tfx-cli": "0.22.1",
-    "typescript": "5.9.2"
+    "typescript": "5.9.3"
   }
 }
