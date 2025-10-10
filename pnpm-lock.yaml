@@ -22,8 +22,8 @@ importers:
         specifier: 2.0.6
         version: 2.0.6
       '@types/node':
-        specifier: 20.19.19
-        version: 20.19.19
+        specifier: 20.19.20
+        version: 20.19.20
       esbuild:
         specifier: 0.25.10
         version: 0.25.10
@@ -274,8 +274,8 @@ packages:
   '@tsconfig/strictest@2.0.6':
     resolution: {integrity: sha512-tPOhmDhIUcDjvpDDYyiUdssP84Eqm7n5KxJe5J3/g+s6xoDIPAf+SIn06dhw7VkhxIvLOnhDDrX7tsqMHNEhDg==}
 
-  '@types/node@20.19.19':
-    resolution: {integrity: sha512-pb1Uqj5WJP7wrcbLU7Ru4QtA0+3kAXrkutGiD26wUKzSMgNNaPARTUDQmElUXp64kh3cWdou3Q0C7qwwxqSFmg==}
+  '@types/node@20.19.20':
+    resolution: {integrity: sha512-2Q7WS25j4pS1cS8yw3d6buNCVJukOTeQ39bAnwR6sOJbaxvyCGebzTMypDFN82CxBLnl+lSWVdCCWbRY6y9yZQ==}
 
   ansi-styles@4.3.0:
     resolution: {integrity: sha512-zbB9rCJAT1rbjiVDb2hqKFHNYLxgtk8NURxZ3IZwD3F6NtxbXZQCnnSi1Lkx+IDohdPlFp222wVALIheZJQSEg==}
@@ -1397,7 +1397,7 @@ snapshots:
 
   '@tsconfig/strictest@2.0.6': {}
 
-  '@types/node@20.19.19':
+  '@types/node@20.19.20':
     dependencies:
       undici-types: 6.21.0
 
