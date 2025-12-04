@@ -23,7 +23,7 @@
     "@tsconfig/node20": "20.1.8",
     "@tsconfig/strictest": "2.0.8",
     "@types/node": "20.19.25",
-    "esbuild": "0.27.0",
+    "esbuild": "0.27.1",
     "esbuild-plugin-copy": "2.1.1",
     "tfx-cli": "0.22.2",
     "typescript": "5.9.3"
