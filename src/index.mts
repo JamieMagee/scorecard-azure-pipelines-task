@@ -260,8 +260,18 @@ async function runScorecard(binary: string): Promise<void> {
 }
 
 /**
+ * Checks that only apply to GitHub Actions and produce false positives on Azure DevOps.
+ */
+const githubOnlyChecks = new Set([
+  "Dangerous-Workflow",
+  "Token-Permissions",
+  "Packaging",
+]);
+
+/**
  * Post-process the SARIF file for Azure DevOps Advanced Security compatibility.
- * Merges multiple runs into one and ensures the tool version is numeric.
+ * Merges multiple runs into one, ensures the tool version is numeric,
+ * and removes results for GitHub-only checks.
  */
 async function fixSarifForAdvSec(): Promise<void> {
   const resultsFile = path.join(process.cwd(), getResultsFileName());
@@ -291,6 +301,18 @@ async function fixSarifForAdvSec(): Promise<void> {
     }
   }
   sarif.runs = [merged];
+
+  // Remove rules and results for GitHub-only checks
+  if (Array.isArray(merged.tool?.driver?.rules)) {
+    merged.tool.driver.rules = merged.tool.driver.rules.filter(
+      (r: { id?: string }) => !r.id || !githubOnlyChecks.has(r.id),
+    );
+  }
+  if (Array.isArray(merged.results)) {
+    merged.results = merged.results.filter(
+      (r: { ruleId?: string }) => !r.ruleId || !githubOnlyChecks.has(r.ruleId),
+    );
+  }
 
   // Ensure the tool driver has a numeric version field
   const driver = merged.tool?.driver;
