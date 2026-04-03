@@ -260,6 +260,53 @@ async function runScorecard(binary: string): Promise<void> {
 }
 
 /**
+ * Post-process the SARIF file for Azure DevOps Advanced Security compatibility.
+ * Merges multiple runs into one and ensures the tool version is numeric.
+ */
+async function fixSarifForAdvSec(): Promise<void> {
+  const resultsFile = path.join(process.cwd(), getResultsFileName());
+  if (!resultsFile.endsWith(".sarif")) {
+    return;
+  }
+
+  const content = await fs.promises.readFile(resultsFile, "utf-8");
+  const sarif = JSON.parse(content);
+
+  if (!Array.isArray(sarif.runs) || sarif.runs.length === 0) {
+    return;
+  }
+
+  // Merge all runs into the first run
+  const merged = sarif.runs[0];
+  for (let i = 1; i < sarif.runs.length; i++) {
+    const run = sarif.runs[i];
+    if (Array.isArray(run.tool?.driver?.rules)) {
+      merged.tool.driver.rules = [
+        ...(merged.tool?.driver?.rules ?? []),
+        ...run.tool.driver.rules,
+      ];
+    }
+    if (Array.isArray(run.results)) {
+      merged.results = [...(merged.results ?? []), ...run.results];
+    }
+  }
+  sarif.runs = [merged];
+
+  // Ensure the tool driver has a numeric version field
+  const driver = merged.tool?.driver;
+  if (driver) {
+    const semVer = driver.semanticVersion ?? driver.version ?? "";
+    driver.version = semVer.replace(/^v/, "");
+    if (driver.semanticVersion) {
+      driver.semanticVersion = driver.semanticVersion.replace(/^v/, "");
+    }
+  }
+
+  await fs.promises.writeFile(resultsFile, JSON.stringify(sarif, null, 2));
+  console.log("Post-processed SARIF for Advanced Security compatibility");
+}
+
+/**
  * Upload the results to Azure DevOps.
  * @see https://learn.microsoft.com/azure/devops/pipelines/scripts/logging-commands#upload-upload-an-artifact
  */
@@ -321,6 +368,8 @@ async function run(): Promise<void> {
 
     console.log("Running Scorecard...");
     await runScorecard(binary);
+
+    await fixSarifForAdvSec();
 
     console.log("Uploading results...");
     await uploadResults();
