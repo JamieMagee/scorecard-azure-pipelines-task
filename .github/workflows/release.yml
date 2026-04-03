@@ -1,5 +1,5 @@
 name: Release
-on: 
+on:
   workflow_dispatch:
     inputs:
       bump:
@@ -31,7 +31,7 @@ jobs:
 
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
-          node-version: '20'
+          node-version: '24'
 
       - run: pnpm install --frozen-lockfile
 
@@ -39,7 +39,7 @@ jobs:
 
       - run: pnpm run build
 
-      - run: | 
+      - run: |
           #!/usr/bin/env bash
           set -euo pipefail
 
@@ -62,7 +62,7 @@ jobs:
 
           jq --arg new_version "$new_version" '.version = $new_version' vss-extension.json > tmp.json && mv tmp.json vss-extension.json
           jq --arg new_version "$new_version" '.version.Major = ($new_version | split(".") | .[0] | tonumber) | .version.Minor = ($new_version | split(".") | .[1] | tonumber) | .version.Patch = ($new_version | split(".") | .[2] | tonumber)' dist/task.json > tmp.json && mv tmp.json dist/task.json
-          
+
           echo "new_version=$new_version" >> $GITHUB_OUTPUT
         id: bump_version
 
@@ -91,7 +91,7 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Publish to Azure Marketplace
         run: |
           pnpm exec tfx extension publish -- --token ${{ secrets.AZURE_MARKETPLACE_TOKEN }} --vsix ${{ steps.set_filename.outputs.filename }}
