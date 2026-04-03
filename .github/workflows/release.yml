@@ -44,7 +44,7 @@ jobs:
           set -euo pipefail
 
           current_version=$(\
-            pnpm exec tfx extension show -- --publisher JamieMagee --extension-id scorecard --trace-level none --token ${{ secrets.AZURE_MARKETPLACE_TOKEN }} | \
+            pnpm exec tfx extension show --publisher JamieMagee --extension-id scorecard --trace-level none --token ${{ secrets.AZURE_MARKETPLACE_TOKEN }} | \
             jq -r '.versions[0].version'
           )
           version_parts=(${current_version//./ })
@@ -94,4 +94,4 @@ jobs:
 
       - name: Publish to Azure Marketplace
         run: |
-          pnpm exec tfx extension publish -- --token ${{ secrets.AZURE_MARKETPLACE_TOKEN }} --vsix ${{ steps.set_filename.outputs.filename }}
+          pnpm exec tfx extension publish --token ${{ secrets.AZURE_MARKETPLACE_TOKEN }} --vsix ${{ steps.set_filename.outputs.filename }}
