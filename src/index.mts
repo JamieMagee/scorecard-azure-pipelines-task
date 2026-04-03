@@ -246,10 +246,11 @@ async function runScorecard(binary: string): Promise<void> {
 
     child.on("close", (code) => {
       if (code !== 0) {
-        reject(new Error(`Scorecard process exited with code ${code}`));
-      } else {
-        resolve();
+        console.log(
+          `##vso[task.logissue type=warning]Scorecard process exited with code ${code}`,
+        );
       }
+      resolve();
     });
 
     child.on("error", (err) => {
