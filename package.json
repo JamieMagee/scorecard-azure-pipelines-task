@@ -5,7 +5,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "node esbuild.mjs",
+    "build": "node esbuild.mts",
     "lint": "biome check ./src",
     "format": "biome format --write ./src",
     "package": "tfx extension create"
