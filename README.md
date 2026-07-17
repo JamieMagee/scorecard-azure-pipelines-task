@@ -25,6 +25,7 @@ Add the following task to your Azure Pipeline:
 | `repoToken`     | Yes      | `$(System.AccessToken)` | Azure DevOps PAT with read access to the repository |
 | `resultsFormat` | No       | `sarif`                 | Output format for results (`sarif` or `json`)       |
 | `resultsFile`   | No       | Auto-generated          | Path where results will be saved                    |
+| `resultsPolicy` | No       | Bundled policy          | Path to a Scorecard YAML policy file                |
 
 ### Inputs
 
@@ -43,6 +44,10 @@ Choose between:
 If not specified, the task will generate a filename based on the format:
 - SARIF format: `scorecard-results.sarif`
 - JSON format: `scorecard-results.json`
+
+#### `resultsPolicy`
+
+Path to a YAML policy file passed to Scorecard's `--policy` option. If omitted, the task uses its [bundled policy](assets/policy.yml).
 
 ## Complete Pipeline Example
 
@@ -65,11 +70,18 @@ steps:
 
 - task: AdvancedSecurity-Publish@1
   displayName: 'Publish Scorecard Results'
+  inputs:
+    SarifsInputDirectory: '$(Build.SourcesDirectory)'
+    WaitForProcessing: true
 ```
 
 ### Integration with GitHub Advanced Security for Azure DevOps
 
 The Scorecard task integrates with [GitHub Advanced Security for Azure DevOps](https://learn.microsoft.com/en-us/azure/devops/repos/security/configure-github-advanced-security-features) through the [`AdvancedSecurity-Publish@1`](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/advanced-security-publish-v1?view=azure-pipelines) task. This integration allows you to view OpenSSF Scorecard security findings directly in Azure DevOps alongside other security scanning results.
+
+Scorecard emits multiple SARIF runs and assigns each one a stable category. Do not set the publisher's `Category` input because it applies one shared value to every run, which Azure DevOps rejects.
+
+Set `WaitForProcessing: true` so the pipeline waits until Advanced Security has accepted and processed the SARIF file. The publisher defaults this option to `false`.
 
 For more information, see [Integrate non-Microsoft scanning tools](https://learn.microsoft.com/en-us/azure/devops/repos/security/github-advanced-security-code-scanning-third-party) in the Azure DevOps documentation.
 

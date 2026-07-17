@@ -36,7 +36,7 @@
       "label": "Results Policy",
       "type": "string",
       "required": false,
-      "helpMarkDown": "INPUT: Path to a JSON file containing the policy to use for the results."
+      "helpMarkDown": "INPUT: Path to a YAML file containing the Scorecard policy. Uses the bundled policy when omitted."
     },
     {
       "name": "repoToken",
