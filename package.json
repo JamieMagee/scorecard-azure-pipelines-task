@@ -13,20 +13,20 @@
   },
   "engines": {
     "node": ">=20.1.0",
-    "pnpm": ">=11.0.0-rc.0"
+    "pnpm": ">=11.14.0"
   },
-  "packageManager": "pnpm@11.0.0-rc.0",
+  "packageManager": "pnpm@11.14.0",
   "dependencies": {
-    "tar": "7.5.13"
+    "tar": "7.5.20"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.11",
+    "@biomejs/biome": "2.5.4",
     "@tsconfig/node24": "24.0.4",
     "@tsconfig/strictest": "2.0.8",
-    "@types/node": "24.12.2",
-    "esbuild": "0.28.0",
+    "@types/node": "24.13.3",
+    "esbuild": "0.28.1",
     "esbuild-plugin-copy": "2.1.1",
-    "tfx-cli": "0.23.1",
-    "typescript": "6.0.2"
+    "tfx-cli": "0.23.4",
+    "typescript": "7.0.2"
   }
 }
