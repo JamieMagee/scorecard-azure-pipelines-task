@@ -6,6 +6,7 @@ import os from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { extract } from "tar/extract";
+import { getResultsFileName, getScorecardArguments } from "./arguments.mts";
 
 /**
  * Get the latest version of Scorecard from GitHub.
@@ -175,60 +176,13 @@ async function extractTarGz(filePath: string): Promise<string> {
 }
 
 /**
- * Get the path to the results file.
- * Uses the `INPUT_RESULTSFILE` environment variable.
- * If not set, defaults to `results.sarif` or `results.json` based on the `INPUT_RESULTSFORMAT` environment variable.
- * @returns {string} The path to the results file.
- */
-function getResultsFileName(): string {
-  const resultsFile = process.env["INPUT_RESULTSFILE"];
-  if (resultsFile) {
-    return resultsFile;
-  }
-  const resultsFormat = process.env["INPUT_RESULTSFORMAT"];
-  if (resultsFormat === "json") {
-    return "scorecard-results.json";
-  }
-  return "scorecard-results.sarif";
-}
-
-/**
- * Get the arguments to pass to the Scorecard binary.
- * @returns {string[]} The arguments to pass to the Scorecard binary.
- */
-function getArguments(): string[] {
-  const args: string[] = [];
-
-  const repository = process.env["BUILD_REPOSITORY_URI"];
-  if (!repository) {
-    throw new Error("BUILD_REPOSITORY_URI environment variable is required");
-  }
-  args.push("--repo", repository);
-
-  const resultsFormat = process.env["INPUT_RESULTSFORMAT"] || "sarif";
-  args.push("--format", resultsFormat);
-
-  args.push("--output", getResultsFileName());
-
-  const resultsPolicy = process.env["INPUT_RESULTSPOLICY"];
-  if (resultsPolicy) {
-    args.push("--policy", resultsPolicy);
-  } else {
-    const defaultPolicy = path.join(import.meta.dirname, "policy.yml");
-    args.push("--policy", defaultPolicy);
-  }
-
-  return args;
-}
-
-/**
  * Run the Scorecard binary.
  * @async
  * @param binary The path to the Scorecard binary.
+ * @param args The arguments to pass to the Scorecard binary.
  * @returns {Promise<void>} A promise that resolves when the command is executed.
  */
-async function runScorecard(binary: string): Promise<void> {
-  const args = getArguments();
+async function runScorecard(binary: string, args: string[]): Promise<void> {
   const env = {
     ...process.env,
     AZURE_DEVOPS_AUTH_TOKEN: process.env["INPUT_REPOTOKEN"],
@@ -274,7 +228,7 @@ const githubOnlyChecks = new Set([
  * and removes results for GitHub-only checks.
  */
 async function fixSarifForAdvSec(): Promise<void> {
-  const resultsFile = path.join(process.cwd(), getResultsFileName());
+  const resultsFile = path.join(process.cwd(), getResultsFileName(process.env));
   if (!resultsFile.endsWith(".sarif")) {
     return;
   }
@@ -333,7 +287,7 @@ async function fixSarifForAdvSec(): Promise<void> {
  * @see https://learn.microsoft.com/azure/devops/pipelines/scripts/logging-commands#upload-upload-an-artifact
  */
 async function uploadResults(): Promise<void> {
-  const resultsFileName = getResultsFileName();
+  const resultsFileName = getResultsFileName(process.env);
   const resultsFile = path.join(process.cwd(), resultsFileName);
 
   // Verify the results file exists before uploading
@@ -373,6 +327,10 @@ async function run(): Promise<void> {
   const tempFiles: string[] = [];
   try {
     console.log("Starting Scorecard Azure Pipelines task...");
+    const scorecardArguments = getScorecardArguments(
+      process.env,
+      import.meta.dirname,
+    );
 
     const downloadUrl = await getDownloadUrl();
     console.log(`Downloading Scorecard from: ${downloadUrl}`);
@@ -389,7 +347,7 @@ async function run(): Promise<void> {
     tempFiles.push(binary);
 
     console.log("Running Scorecard...");
-    await runScorecard(binary);
+    await runScorecard(binary, scorecardArguments);
 
     await fixSarifForAdvSec();
 

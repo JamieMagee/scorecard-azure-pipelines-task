@@ -7,6 +7,7 @@
   "scripts": {
     "build": "node esbuild.mts",
     "lint": "biome check ./src",
+    "test": "node --test --experimental-strip-types src/*.test.mts",
     "format": "biome format --write ./src",
     "package": "tfx extension create"
   },
