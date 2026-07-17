@@ -12,6 +12,10 @@ export function getResultsFileName(env: NodeJS.ProcessEnv): string {
   return "scorecard-results.sarif";
 }
 
+export function getResultsFormat(env: NodeJS.ProcessEnv): string {
+  return env["INPUT_RESULTSFORMAT"] || "sarif";
+}
+
 export function getScorecardArguments(
   env: NodeJS.ProcessEnv,
   taskDirectory: string,
@@ -21,7 +25,7 @@ export function getScorecardArguments(
     throw new Error("BUILD_REPOSITORY_URI environment variable is required");
   }
 
-  const resultsFormat = env["INPUT_RESULTSFORMAT"] || "sarif";
+  const resultsFormat = getResultsFormat(env);
   const resultsPolicy =
     env["INPUT_RESULTSPOLICY"] || path.join(taskDirectory, "policy.yml");
 

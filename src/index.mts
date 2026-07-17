@@ -6,7 +6,12 @@ import os from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { extract } from "tar/extract";
-import { getResultsFileName, getScorecardArguments } from "./arguments.mts";
+import {
+  getResultsFileName,
+  getResultsFormat,
+  getScorecardArguments,
+} from "./arguments.mts";
+import { prepareSarifForAdvancedSecurity } from "./sarif.mts";
 
 /**
  * Get the latest version of Scorecard from GitHub.
@@ -214,72 +219,19 @@ async function runScorecard(binary: string, args: string[]): Promise<void> {
 }
 
 /**
- * Checks that only apply to GitHub Actions and produce false positives on Azure DevOps.
- */
-const githubOnlyChecks = new Set([
-  "Dangerous-Workflow",
-  "Token-Permissions",
-  "Packaging",
-]);
-
-/**
  * Post-process the SARIF file for Azure DevOps Advanced Security compatibility.
- * Merges multiple runs into one, ensures the tool version is numeric,
- * and removes results for GitHub-only checks.
+ * Preserves Scorecard runs while normalizing tool versions and validating rule references.
  */
-async function fixSarifForAdvSec(): Promise<void> {
+async function prepareSarifForAdvSec(): Promise<void> {
+  if (getResultsFormat(process.env) !== "sarif") {
+    return;
+  }
+
   const resultsFile = path.join(process.cwd(), getResultsFileName(process.env));
-  if (!resultsFile.endsWith(".sarif")) {
-    return;
-  }
-
   const content = await fs.promises.readFile(resultsFile, "utf-8");
-  const sarif = JSON.parse(content);
-
-  if (!Array.isArray(sarif.runs) || sarif.runs.length === 0) {
-    return;
-  }
-
-  // Merge all runs into the first run
-  const merged = sarif.runs[0];
-  for (let i = 1; i < sarif.runs.length; i++) {
-    const run = sarif.runs[i];
-    if (Array.isArray(run.tool?.driver?.rules)) {
-      merged.tool.driver.rules = [
-        ...(merged.tool?.driver?.rules ?? []),
-        ...run.tool.driver.rules,
-      ];
-    }
-    if (Array.isArray(run.results)) {
-      merged.results = [...(merged.results ?? []), ...run.results];
-    }
-  }
-  sarif.runs = [merged];
-
-  // Remove rules and results for GitHub-only checks
-  if (Array.isArray(merged.tool?.driver?.rules)) {
-    merged.tool.driver.rules = merged.tool.driver.rules.filter(
-      (r: { id?: string }) => !r.id || !githubOnlyChecks.has(r.id),
-    );
-  }
-  if (Array.isArray(merged.results)) {
-    merged.results = merged.results.filter(
-      (r: { ruleId?: string }) => !r.ruleId || !githubOnlyChecks.has(r.ruleId),
-    );
-  }
-
-  // Ensure the tool driver has a numeric version field
-  const driver = merged.tool?.driver;
-  if (driver) {
-    const semVer = driver.semanticVersion ?? driver.version ?? "";
-    driver.version = semVer.replace(/^v/, "");
-    if (driver.semanticVersion) {
-      driver.semanticVersion = driver.semanticVersion.replace(/^v/, "");
-    }
-  }
-
-  await fs.promises.writeFile(resultsFile, JSON.stringify(sarif, null, 2));
-  console.log("Post-processed SARIF for Advanced Security compatibility");
+  const prepared = prepareSarifForAdvancedSecurity(content);
+  await fs.promises.writeFile(resultsFile, prepared);
+  console.log("Prepared SARIF for Advanced Security compatibility");
 }
 
 /**
@@ -349,7 +301,7 @@ async function run(): Promise<void> {
     console.log("Running Scorecard...");
     await runScorecard(binary, scorecardArguments);
 
-    await fixSarifForAdvSec();
+    await prepareSarifForAdvSec();
 
     console.log("Uploading results...");
     await uploadResults();
