@@ -1,4 +1,3 @@
-import { spawn } from "node:child_process";
 import console from "node:console";
 import crypto from "node:crypto";
 import fs from "node:fs";
@@ -11,7 +10,9 @@ import {
   getResultsFormat,
   getScorecardArguments,
 } from "./arguments.mts";
-import { prepareSarifForAdvancedSecurity } from "./sarif.mts";
+import { prepareResultsForUpload } from "./results.mts";
+import { runScorecardProcess } from "./scorecard-process.mts";
+import { getTaskCompletionMessages } from "./task-result.mts";
 
 /**
  * Get the latest version of Scorecard from GitHub.
@@ -181,57 +182,23 @@ async function extractTarGz(filePath: string): Promise<string> {
 }
 
 /**
- * Run the Scorecard binary.
- * @async
- * @param binary The path to the Scorecard binary.
- * @param args The arguments to pass to the Scorecard binary.
- * @returns {Promise<void>} A promise that resolves when the command is executed.
+ * Validate and prepare the Scorecard result file for upload.
  */
-async function runScorecard(binary: string, args: string[]): Promise<void> {
-  const env = {
-    ...process.env,
-    AZURE_DEVOPS_AUTH_TOKEN: process.env["INPUT_REPOTOKEN"],
-    SCORECARD_EXPERIMENTAL: "true",
-    ENABLE_SARIF: "true",
-  };
-
-  console.log(`Running: ${binary} ${args.join(" ")}`);
-
-  return new Promise((resolve, reject) => {
-    const child = spawn(binary, args, {
-      env,
-      stdio: "inherit",
-    });
-
-    child.on("close", (code) => {
-      if (code !== 0) {
-        console.log(
-          `##vso[task.logissue type=warning]Scorecard process exited with code ${code}`,
-        );
-      }
-      resolve();
-    });
-
-    child.on("error", (err) => {
-      reject(new Error(`Failed to start Scorecard process: ${err.message}`));
-    });
-  });
-}
-
-/**
- * Post-process the SARIF file for Azure DevOps Advanced Security compatibility.
- * Preserves Scorecard runs while normalizing tool versions and validating rule references.
- */
-async function prepareSarifForAdvSec(): Promise<void> {
-  if (getResultsFormat(process.env) !== "sarif") {
-    return;
-  }
-
+async function prepareResultsFileForUpload(): Promise<void> {
+  const resultsFormat = getResultsFormat(process.env);
   const resultsFile = path.join(process.cwd(), getResultsFileName(process.env));
-  const content = await fs.promises.readFile(resultsFile, "utf-8");
-  const prepared = prepareSarifForAdvancedSecurity(content);
-  await fs.promises.writeFile(resultsFile, prepared);
-  console.log("Prepared SARIF for Advanced Security compatibility");
+  let content: string;
+  try {
+    content = await fs.promises.readFile(resultsFile, "utf-8");
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to read results file ${resultsFile}: ${reason}`);
+  }
+  const prepared = prepareResultsForUpload(content, resultsFormat);
+  if (prepared !== content) {
+    await fs.promises.writeFile(resultsFile, prepared);
+  }
+  console.log(`Prepared ${resultsFormat.toUpperCase()} results for upload`);
 }
 
 /**
@@ -273,9 +240,9 @@ async function cleanup(filePaths: string[]): Promise<void> {
 /**
  * The main entrypoint of the task.
  * @async
- * @returns {Promise<void>} A promise that resolves when the task is complete.
+ * @returns {Promise<number>} The Scorecard process exit code.
  */
-async function run(): Promise<void> {
+async function run(): Promise<number> {
   const tempFiles: string[] = [];
   try {
     console.log("Starting Scorecard Azure Pipelines task...");
@@ -299,14 +266,24 @@ async function run(): Promise<void> {
     tempFiles.push(binary);
 
     console.log("Running Scorecard...");
-    await runScorecard(binary, scorecardArguments);
+    console.log(`Running: ${binary} ${scorecardArguments.join(" ")}`);
+    const scorecardExitCode = await runScorecardProcess(
+      binary,
+      scorecardArguments,
+      {
+        ...process.env,
+        AZURE_DEVOPS_AUTH_TOKEN: process.env["INPUT_REPOTOKEN"],
+        SCORECARD_EXPERIMENTAL: "true",
+        ENABLE_SARIF: "true",
+      },
+    );
 
-    await prepareSarifForAdvSec();
+    await prepareResultsFileForUpload();
 
     console.log("Uploading results...");
     await uploadResults();
 
-    console.log("Scorecard task completed successfully!");
+    return scorecardExitCode;
   } catch (error) {
     console.error("Scorecard task failed:", error);
     throw error;
@@ -317,7 +294,13 @@ async function run(): Promise<void> {
 }
 
 // Run the main function
-run().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+run()
+  .then((exitCode) => {
+    for (const message of getTaskCompletionMessages(exitCode)) {
+      console.log(message);
+    }
+  })
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
