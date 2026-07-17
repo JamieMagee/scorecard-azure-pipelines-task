@@ -20,9 +20,18 @@ function prepare(value: unknown) {
 test("preserves Scorecard multi-run SARIF", () => {
   const original = fixtureValue();
   const expected = structuredClone(original);
-  for (const run of expected.runs) {
+  const categories = [
+    "scorecard-branch-protection",
+    "scorecard-local",
+    "scorecard-online-scm",
+  ];
+  for (const [index, run] of expected.runs.entries()) {
     run.tool.driver.version = "5.5.0";
     run.tool.driver.semanticVersion = "5.5.0";
+    run.properties = {
+      ...(run.properties ?? {}),
+      category: categories[index],
+    };
   }
 
   const prepared = prepare(original);
@@ -44,6 +53,12 @@ test("preserves Scorecard multi-run SARIF", () => {
       0,
     ),
     5,
+  );
+  assert.deepEqual(
+    prepared.runs.map(
+      (run: { properties: { category: string } }) => run.properties.category,
+    ),
+    categories,
   );
 });
 
@@ -130,6 +145,38 @@ test("rejects invalid rule indices", () => {
 });
 
 test("rejects missing run structure", () => {
+  const missingAutomationDetails = fixtureValue();
+  delete missingAutomationDetails.runs[0].automationDetails;
+  assert.throws(
+    () => prepare(missingAutomationDetails),
+    new Error("Invalid SARIF: runs[0].automationDetails must be an object"),
+  );
+
+  const missingAutomationID = fixtureValue();
+  delete missingAutomationID.runs[0].automationDetails.id;
+  assert.throws(
+    () => prepare(missingAutomationID),
+    new Error(
+      "Invalid SARIF: runs[0].automationDetails.id must be a nonempty string",
+    ),
+  );
+
+  const missingCategory = fixtureValue();
+  missingCategory.runs[0].automationDetails.id = "scorecard";
+  assert.throws(
+    () => prepare(missingCategory),
+    new Error(
+      "Invalid SARIF: runs[0].automationDetails.id must contain a run category",
+    ),
+  );
+
+  const invalidProperties = fixtureValue();
+  invalidProperties.runs[0].properties = "invalid";
+  assert.throws(
+    () => prepare(invalidProperties),
+    new Error("Invalid SARIF: runs[0].properties must be an object"),
+  );
+
   const missingDriverName = fixtureValue();
   delete missingDriverName.runs[0].tool.driver.name;
   assert.throws(
@@ -182,6 +229,19 @@ test("rejects missing run structure", () => {
     () => prepare(emptyMessage),
     new Error(
       "Invalid SARIF: runs[0].results[0].message must contain nonempty text or markdown",
+    ),
+  );
+});
+
+test("rejects duplicate run categories", () => {
+  const sarif = fixtureValue();
+  sarif.runs[1].automationDetails.id =
+    "supply-chain/branch-protection/another-run";
+
+  assert.throws(
+    () => prepare(sarif),
+    new Error(
+      'Invalid SARIF: duplicate run category "scorecard-branch-protection"',
     ),
   );
 });
