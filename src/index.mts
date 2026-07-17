@@ -10,6 +10,7 @@ import {
   getResultsFormat,
   getScorecardArguments,
 } from "./arguments.mts";
+import { downloadToFile } from "./download.mts";
 import { prepareResultsForUpload } from "./results.mts";
 import { runScorecardProcess } from "./scorecard-process.mts";
 import { getTaskCompletionMessages } from "./task-result.mts";
@@ -87,32 +88,9 @@ async function getDownloadUrl(): Promise<string> {
  * @throws {Error} If the fetch fails.
  */
 async function downloadFile(url: string): Promise<string> {
-  const filename = path.basename(url);
-  const response = await fetch(url);
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch ${url}: ${response.statusText}`);
-  }
-
-  if (!response.body) {
-    throw new Error(`No response body for ${url}`);
-  }
-
-  const fileStream = fs.createWriteStream(filename);
-  try {
-    const buffer = await response.arrayBuffer();
-    await fs.promises.writeFile(filename, new Uint8Array(buffer));
-    return filename;
-  } catch (error) {
-    try {
-      fs.unlinkSync(filename);
-    } catch {
-      // Ignore cleanup errors
-    }
-    throw error;
-  } finally {
-    fileStream.destroy();
-  }
+  const filename = path.basename(new URL(url).pathname);
+  await downloadToFile(url, filename);
+  return filename;
 }
 
 /**
