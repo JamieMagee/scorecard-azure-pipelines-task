@@ -38,7 +38,25 @@ function requireMessage(value: unknown, path: string): void {
   }
 }
 
-function prepareRun(value: unknown, runIndex: number): void {
+function getRunCategory(run: JsonObject, runPath: string): string {
+  const automationDetails = requireObject(
+    run["automationDetails"],
+    `${runPath}.automationDetails`,
+  );
+  const id = requireNonemptyString(
+    automationDetails["id"],
+    `${runPath}.automationDetails.id`,
+  );
+  const category = id.split("/")[1];
+  if (!category) {
+    throw new Error(
+      `Invalid SARIF: ${runPath}.automationDetails.id must contain a run category`,
+    );
+  }
+  return `scorecard-${category}`;
+}
+
+function prepareRun(value: unknown, runIndex: number): string {
   const runPath = `runs[${runIndex}]`;
   const run = requireObject(value, runPath);
   const tool = requireObject(run["tool"], `${runPath}.tool`);
@@ -64,6 +82,14 @@ function prepareRun(value: unknown, runIndex: number): void {
   }
   driver["version"] = normalizedVersion;
   driver["semanticVersion"] = normalizedVersion;
+
+  const category = getRunCategory(run, runPath);
+  const properties =
+    run["properties"] === undefined
+      ? {}
+      : requireObject(run["properties"], `${runPath}.properties`);
+  properties["category"] = category;
+  run["properties"] = properties;
 
   const ruleIds = rules.map((ruleValue, ruleIndex) => {
     const rulePath = `${runPath}.tool.driver.rules[${ruleIndex}]`;
@@ -104,6 +130,8 @@ function prepareRun(value: unknown, runIndex: number): void {
       );
     }
   }
+
+  return category;
 }
 
 export function prepareSarifForAdvancedSecurity(content: string): string {
@@ -124,8 +152,13 @@ export function prepareSarifForAdvancedSecurity(content: string): string {
     throw new Error("Invalid SARIF: runs must not be empty");
   }
 
+  const categories = new Set<string>();
   for (const [runIndex, run] of runs.entries()) {
-    prepareRun(run, runIndex);
+    const category = prepareRun(run, runIndex);
+    if (categories.has(category)) {
+      throw new Error(`Invalid SARIF: duplicate run category "${category}"`);
+    }
+    categories.add(category);
   }
 
   return JSON.stringify(sarif, null, 2);
