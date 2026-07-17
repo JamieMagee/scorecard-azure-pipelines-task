@@ -49,6 +49,12 @@ If not specified, the task will generate a filename based on the format:
 
 Path to a YAML policy file passed to Scorecard's `--policy` option. If omitted, the task uses its [bundled policy](assets/policy.yml).
 
+### Task result
+
+A successful Scorecard process marks the task as succeeded. If Scorecard exits nonzero but writes valid results, the task uploads them and reports `SucceededWithIssues`. Missing or invalid results fail the task.
+
+You do not need `continueOnError` merely to publish partial Scorecard results.
+
 ## Complete Pipeline Example
 
 ```yaml
