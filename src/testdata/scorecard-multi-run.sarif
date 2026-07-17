@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "properties": {
+    "fixture": true
+  },
+  "runs": [
+    {
+      "automationDetails": {
+        "id": "supply-chain/branch-protection/example"
+      },
+      "tool": {
+        "driver": {
+          "name": "Scorecard",
+          "semanticVersion": "v5.5.0",
+          "rules": [
+            {
+              "id": "BranchProtectionID",
+              "name": "Branch-Protection"
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "BranchProtectionID",
+          "ruleIndex": 0,
+          "message": {
+            "text": "branch protection finding"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "policy.yml"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "automationDetails": {
+        "id": "supply-chain/local/example"
+      },
+      "properties": {
+        "category": "local"
+      },
+      "tool": {
+        "driver": {
+          "name": "Scorecard",
+          "semanticVersion": "v5.5.0",
+          "rules": [
+            {
+              "id": "BinaryArtifactsID",
+              "name": "Binary-Artifacts"
+            },
+            {
+              "id": "DependencyUpdateToolID",
+              "name": "Dependency-Update-Tool"
+            },
+            {
+              "id": "FuzzingID",
+              "name": "Fuzzing"
+            },
+            {
+              "id": "LicenseID",
+              "name": "License"
+            },
+            {
+              "id": "PinnedDependenciesID",
+              "name": "Pinned-Dependencies"
+            },
+            {
+              "id": "SASTID",
+              "name": "SAST"
+            },
+            {
+              "id": "SecurityPolicyID",
+              "name": "Security-Policy"
+            },
+            {
+              "id": "VulnerabilitiesID",
+              "name": "Vulnerabilities"
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "DependencyUpdateToolID",
+          "ruleIndex": 1,
+          "message": {
+            "text": "dependency update finding"
+          },
+          "partialFingerprints": {
+            "primaryLocationLineHash": "dependency-update"
+          }
+        },
+        {
+          "ruleId": "SASTID",
+          "ruleIndex": 5,
+          "message": {
+            "text": "SAST finding"
+          }
+        }
+      ]
+    },
+    {
+      "automationDetails": {
+        "id": "supply-chain/online-scm/example"
+      },
+      "tool": {
+        "driver": {
+          "name": "Scorecard",
+          "semanticVersion": "v5.5.0",
+          "rules": [
+            {
+              "id": "CITestsID",
+              "name": "CI-Tests"
+            },
+            {
+              "id": "CIIBestPracticesID",
+              "name": "CII-Best-Practices"
+            },
+            {
+              "id": "CodeReviewID",
+              "name": "Code-Review"
+            },
+            {
+              "id": "ContributorsID",
+              "name": "Contributors"
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "CIIBestPracticesID",
+          "ruleIndex": 1,
+          "message": {
+            "text": "best practices finding"
+          }
+        },
+        {
+          "ruleId": "CodeReviewID",
+          "ruleIndex": 2,
+          "message": {
+            "text": "code review finding"
+          }
+        }
+      ]
+    }
+  ]
+}

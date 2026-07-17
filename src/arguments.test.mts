@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import path from "node:path";
 import { test } from "node:test";
-import { getResultsFileName, getScorecardArguments } from "./arguments.mts";
+import {
+  getResultsFileName,
+  getResultsFormat,
+  getScorecardArguments,
+} from "./arguments.mts";
 
 test("builds Scorecard arguments with defaults", () => {
   const taskDirectory = "/task";
@@ -62,6 +66,11 @@ test("selects the default results filename", () => {
     }),
     "custom.sarif",
   );
+});
+
+test("selects the results format", () => {
+  assert.equal(getResultsFormat({}), "sarif");
+  assert.equal(getResultsFormat({ INPUT_RESULTSFORMAT: "json" }), "json");
 });
 
 test("requires BUILD_REPOSITORY_URI", () => {
