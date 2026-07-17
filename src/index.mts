@@ -4,13 +4,13 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import process from "node:process";
-import { extract } from "tar/extract";
 import {
   getResultsFileName,
   getResultsFormat,
   getScorecardArguments,
 } from "./arguments.mts";
 import { downloadToFile } from "./download.mts";
+import { extractScorecardArchive } from "./extract.mts";
 import { prepareResultsForUpload } from "./results.mts";
 import { runScorecardProcess } from "./scorecard-process.mts";
 import { getTaskCompletionMessages } from "./task-result.mts";
@@ -131,35 +131,6 @@ async function verifyChecksum(
 }
 
 /**
- * Extract a .tar.gz file to a destination directory.
- * @async
- * @param filePath The path to the .tar.gz file.
- * @returns {Promise<string>} The path to the extracted Scorecard binary.
- */
-async function extractTarGz(filePath: string): Promise<string> {
-  const dest = path.join(os.tmpdir(), "scorecard");
-  await fs.promises.mkdir(dest, { recursive: true });
-
-  await extract({
-    file: filePath,
-    cwd: dest,
-    gzip: true,
-    filter: (file) => file.startsWith("scorecard"),
-  });
-
-  const suffix = getOs() === "windows" ? ".exe" : "";
-  const binaryPath = path.join(dest, `scorecard${suffix}`);
-
-  try {
-    await fs.promises.access(binaryPath);
-  } catch {
-    throw new Error(`Scorecard binary not found at ${binaryPath}`);
-  }
-
-  return binaryPath;
-}
-
-/**
  * Validate and prepare the Scorecard result file for upload.
  */
 async function prepareResultsFileForUpload(): Promise<void> {
@@ -199,12 +170,16 @@ async function uploadResults(): Promise<void> {
 }
 
 /**
- * Clean up temporary files.
+ * Clean up temporary files and directories.
  * @param filePaths The file paths to clean up.
+ * @param directoryPaths The directory paths to clean up recursively.
  */
-async function cleanup(filePaths: string[]): Promise<void> {
-  await Promise.allSettled(
-    filePaths.map(async (filePath) => {
+async function cleanup(
+  filePaths: string[],
+  directoryPaths: string[],
+): Promise<void> {
+  await Promise.allSettled([
+    ...filePaths.map(async (filePath) => {
       try {
         await fs.promises.unlink(filePath);
         console.log(`Cleaned up: ${filePath}`);
@@ -212,7 +187,18 @@ async function cleanup(filePaths: string[]): Promise<void> {
         // Ignore cleanup errors
       }
     }),
-  );
+    ...directoryPaths.map(async (directoryPath) => {
+      try {
+        await fs.promises.rm(directoryPath, {
+          force: true,
+          recursive: true,
+        });
+        console.log(`Cleaned up: ${directoryPath}`);
+      } catch {
+        // Ignore cleanup errors
+      }
+    }),
+  ]);
 }
 
 /**
@@ -222,6 +208,7 @@ async function cleanup(filePaths: string[]): Promise<void> {
  */
 async function run(): Promise<number> {
   const tempFiles: string[] = [];
+  const tempDirectories: string[] = [];
   try {
     console.log("Starting Scorecard Azure Pipelines task...");
     const scorecardArguments = getScorecardArguments(
@@ -240,8 +227,9 @@ async function run(): Promise<number> {
     await verifyChecksum(downloadUrl, filename);
 
     console.log("Extracting binary...");
-    const binary = await extractTarGz(filename);
-    tempFiles.push(binary);
+    const extracted = await extractScorecardArchive(filename);
+    tempDirectories.push(extracted.directory);
+    const binary = extracted.binaryPath;
 
     console.log("Running Scorecard...");
     console.log(`Running: ${binary} ${scorecardArguments.join(" ")}`);
@@ -266,8 +254,7 @@ async function run(): Promise<number> {
     console.error("Scorecard task failed:", error);
     throw error;
   } finally {
-    // Clean up temporary files
-    await cleanup(tempFiles);
+    await cleanup(tempFiles, tempDirectories);
   }
 }
 
