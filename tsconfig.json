@@ -5,6 +5,7 @@
   ],
   "include": ["src"],
   "compilerOptions": {
+    "allowImportingTsExtensions": true,
     "module": "preserve",
     "moduleResolution": "bundler",
     "noEmit": true,
