@@ -27,7 +27,25 @@ test("rejects invalid SARIF", () => {
 });
 
 test("accepts valid JSON unchanged", () => {
-  for (const content of ['{"score":10}', "[1,2,3]", "null", '"result"']) {
+  const check = {
+    name: "Binary-Artifacts",
+    score: 10,
+    reason: "no binaries found",
+    documentation: {
+      url: "https://example.com/check",
+      short: "Binary artifacts",
+    },
+    details: null,
+  };
+  for (const checks of [[check], [], null]) {
+    const content = JSON.stringify({
+      date: "2026-01-01T00:00:00Z",
+      repo: { name: "dev.azure.com/org/project/_git/repo", commit: "HEAD" },
+      scorecard: { version: "v5.6.0", commit: "unknown" },
+      score: checks?.length ? 10 : -1,
+      checks,
+      metadata: null,
+    });
     assert.equal(prepareResultsForUpload(content, "json"), content);
   }
 });

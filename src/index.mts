@@ -133,15 +133,18 @@ async function verifyChecksum(
 /**
  * Validate and prepare the Scorecard result file for upload.
  */
-async function prepareResultsFileForUpload(): Promise<void> {
-  const resultsFormat = getResultsFormat(process.env);
-  const resultsFile = path.join(process.cwd(), getResultsFileName(process.env));
+async function prepareResultsFileForUpload(
+  resultsFile: string,
+  resultsFormat: string,
+): Promise<void> {
   let content: string;
   try {
     content = await fs.promises.readFile(resultsFile, "utf-8");
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed to read results file ${resultsFile}: ${reason}`);
+    throw new Error(`Failed to read results file ${resultsFile}: ${reason}`, {
+      cause: error,
+    });
   }
   const prepared = prepareResultsForUpload(content, resultsFormat);
   if (prepared !== content) {
@@ -154,19 +157,21 @@ async function prepareResultsFileForUpload(): Promise<void> {
  * Upload the results to Azure DevOps.
  * @see https://learn.microsoft.com/azure/devops/pipelines/scripts/logging-commands#upload-upload-an-artifact
  */
-async function uploadResults(): Promise<void> {
-  const resultsFileName = getResultsFileName(process.env);
-  const resultsFile = path.join(process.cwd(), resultsFileName);
-
-  // Verify the results file exists before uploading
+async function uploadResults(
+  resultsFileName: string,
+  resultsFile: string,
+): Promise<void> {
   try {
     await fs.promises.access(resultsFile);
-    console.log(
-      `##vso[artifact.upload artifactname=${resultsFileName};]${resultsFile}`,
-    );
-  } catch {
-    throw new Error(`Results file not found: ${resultsFile}`);
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to access results file ${resultsFile}: ${reason}`, {
+      cause: error,
+    });
   }
+  console.log(
+    `##vso[artifact.upload artifactname=${resultsFileName};]${resultsFile}`,
+  );
 }
 
 /**
@@ -211,8 +216,29 @@ async function run(): Promise<number> {
   const tempDirectories: string[] = [];
   try {
     console.log("Starting Scorecard Azure Pipelines task...");
+    const resultsFileName = getResultsFileName(process.env);
+    const resultsFile = path.resolve(process.cwd(), resultsFileName);
+    const resultsFormat = getResultsFormat(process.env);
+    try {
+      await fs.promises.unlink(resultsFile);
+    } catch (error) {
+      if (
+        !(error instanceof Error && "code" in error && error.code === "ENOENT")
+      ) {
+        const reason = error instanceof Error ? error.message : String(error);
+        throw new Error(
+          `Failed to remove previous results file ${resultsFile}: ${reason}`,
+          { cause: error },
+        );
+      }
+    }
+    const resultsDirectory = await fs.promises.mkdtemp(
+      path.join(path.dirname(resultsFile), ".scorecard-results-"),
+    );
+    tempDirectories.push(resultsDirectory);
+    const temporaryResultsFile = path.join(resultsDirectory, "results.tmp");
     const scorecardArguments = getScorecardArguments(
-      process.env,
+      { ...process.env, INPUT_RESULTSFILE: temporaryResultsFile },
       import.meta.dirname,
     );
 
@@ -244,10 +270,11 @@ async function run(): Promise<number> {
       },
     );
 
-    await prepareResultsFileForUpload();
+    await prepareResultsFileForUpload(temporaryResultsFile, resultsFormat);
+    await fs.promises.rename(temporaryResultsFile, resultsFile);
 
     console.log("Uploading results...");
-    await uploadResults();
+    await uploadResults(resultsFileName, resultsFile);
 
     return scorecardExitCode;
   } catch (error) {
